@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:medicalapp/college_student_form.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final String degree;
@@ -61,140 +63,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     }
   }
 
-  Widget buildEducation(List<dynamic> educationList) {
-    if (educationList.isEmpty)
-      return Text('No education details', style: TextStyle(fontSize: 14));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Heading row
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            children: const [
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Degree',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Course',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'College',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Duration',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+  Widget buildStudentCard(BuildContext context, Map<String, dynamic> student) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        final applicationId = student['application'];
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StudentDetailScreen(applicationId: applicationId),
           ),
-        ),
-        Divider(),
-        // Data rows
-        ...educationList.map((edu) {
-          final degree = edu['Degree'] ?? '-';
-          final courseName =
-              (edu['CourseName'] ?? '').isEmpty ? '-' : edu['CourseName'];
-          final college = edu['College'] ?? '-';
-          final from = edu['YearFrom'] ?? '-';
-          final to = edu['YearTo'] ?? '-';
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: Row(
-              children: [
-                Expanded(flex: 3, child: Text(degree)),
-                Expanded(flex: 3, child: Text(courseName)),
-                Expanded(flex: 3, child: Text(college)),
-                Expanded(flex: 2, child: Text('$from to $to')),
-              ],
-            ),
-          );
-        }).toList(),
-      ],
-    );
-  }
-
-  Widget buildExperience(List<dynamic>? experienceList) {
-    if (experienceList == null || experienceList.isEmpty) {
-      return Text('No experience', style: TextStyle(fontSize: 14));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Heading row
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            children: const [
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Role',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Hospital',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Place',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Duration',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Divider(),
-        ...experienceList.map((exp) {
-          final role = exp['Title'] ?? '-';
-          final hospital = exp['Hospital'] ?? '-';
-          final place = exp['Location'] ?? '-';
-          final from = exp['FromYear'] ?? '-';
-          final to = exp['ToYear'] ?? '-';
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.0),
-            child: Row(
-              children: [
-                Expanded(flex: 3, child: Text(role)),
-                Expanded(flex: 3, child: Text(hospital)),
-                Expanded(flex: 3, child: Text(place)),
-                Expanded(flex: 2, child: Text('$from to $to')),
-              ],
-            ),
-          );
-        }).toList(),
-      ],
+        );
+      },
+      child: StudentCard(student: student),
     );
   }
 
@@ -207,52 +88,135 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       ),
       body:
           isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : error != null
               ? Center(child: Text(error!))
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: students.length,
-                itemBuilder: (context, index) {
-                  final student = students[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Name: ${student['name']}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Education:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          buildEducation(student['education_details'] ?? []),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Experience:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          buildExperience(student['experience']),
-                        ],
+              : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWideScreen = constraints.maxWidth > 600;
+                  // breakpoint for mobile vs web/tablet layout
+
+                  if (kIsWeb || isWideScreen) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Wrap(
+                        spacing: 24,
+                        runSpacing: 24,
+                        children:
+                            students.map((student) {
+                              return SizedBox(
+                                width: 450,
+                                child: buildStudentCard(context, student),
+                              );
+                            }).toList(),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: students.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: buildStudentCard(context, students[index]),
+                        );
+                      },
+                    );
+                  }
                 },
               ),
+    );
+  }
+}
+
+class StudentCard extends StatelessWidget {
+  final Map<String, dynamic> student;
+  const StudentCard({Key? key, required this.student}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final highestDegree = student['highest_degree'] ?? {};
+    final latestExperience = student['latest_experience'] ?? {};
+
+    final degree = highestDegree['degree'] ?? '-';
+    final degreeStart = highestDegree['start_date'] ?? '-';
+    final degreeEnd = highestDegree['end_date'] ?? '-';
+
+    final hospital = latestExperience['hospital_name'] ?? '-';
+    final expFrom = latestExperience['from_date'] ?? '-';
+    final expTo = latestExperience['to_date'] ?? '-';
+    final role = latestExperience['role'] ?? '';
+
+    final experienceText =
+        role.isEmpty ? 'No experience' : '$hospital ($expFrom to $expTo)';
+
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shadowColor: Colors.deepPurple.shade100,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade50, Colors.deepPurple.shade100],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Student Name: ${student['name']}',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple.shade900,
+                shadows: [
+                  Shadow(
+                    color: Colors.deepPurple.shade200,
+                    blurRadius: 2,
+                    offset: const Offset(1, 1),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.deepPurple.shade800,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'Highest Degree: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: '$degree ($degreeStart to $degreeEnd)'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 17,
+                  color: Colors.deepPurple.shade800,
+                ),
+                children: [
+                  const TextSpan(
+                    text: 'Experience: ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: experienceText),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

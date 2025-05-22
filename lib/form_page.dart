@@ -157,16 +157,22 @@ class _ApplicationFormState extends State<ApplicationForm> {
 
       // Education
       'education': [
-        // MBBS + any PG/SS
         ...educationDetails.map((e) => e.toJson()),
-        if (_hasPG) ...pgDetails.map((e) => e.toJson()),
-        if (_hasSS) ...ssDetails.map((e) => e.toJson()),
+        if (_hasPG) ...pgDetails.map((e) => e.toJson()) else ...[],
+        if (_hasSS) ...ssDetails.map((e) => e.toJson()) else ...[],
       ],
 
-      // Fellowships, Papers, Work Experience
-      'fellowships': fellowships.map((f) => f.toJson()).toList(),
-      'papers': papers.map((p) => p.toJson()).toList(),
-      'workExperiences': workExperiences.map((w) => w.toJson()).toList(),
+      // Fellowships, Papers, Work Experience - pass empty lists if "No"
+      'fellowships':
+          _hasFellowships
+              ? fellowships.map((f) => f.toJson()).toList()
+              : <dynamic>[],
+      'papers':
+          _hasPapers ? papers.map((p) => p.toJson()).toList() : <dynamic>[],
+      'workExperiences':
+          _hasWorkExperience
+              ? workExperiences.map((w) => w.toJson()).toList()
+              : <dynamic>[],
 
       // Certificate
       'certificate': {
@@ -332,7 +338,7 @@ class _ApplicationFormState extends State<ApplicationForm> {
 
               // Medical Course Certificate Section
               _buildSectionHeader(
-                'Currently Active Medical Course Certificate',
+                'Currently Active Medical Councel Certificate',
                 'certificate',
               ),
               if (_isEditing)
